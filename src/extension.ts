@@ -1,26 +1,43 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as path from 'path';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+    console.log('Congratulations, your extension "perplexity-debugging" is now active!');
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "perplexity-debugging" is now active!');
+    let disposable = vscode.commands.registerCommand('perplexity-debugging.helloWorld', () => {
+        vscode.window.showInformationMessage('Hello World from perplexity-debugging!');
+    });
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('perplexity-debugging.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from perplexity-debugging!');
-	});
+    context.subscriptions.push(disposable);
 
-	context.subscriptions.push(disposable);
+    const collection = vscode.languages.createDiagnosticCollection('test');
+	if (vscode.window.activeTextEditor) {
+		updateDiagnostics(vscode.window.activeTextEditor.document, collection);
+	}
+    context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {
+		if (editor) {
+			updateDiagnostics(editor.document, collection);
+		}
+	}));
 }
 
-// This method is called when your extension is deactivated
+function updateDiagnostics(document: vscode.TextDocument, collection: vscode.DiagnosticCollection): void {
+	if (document) {
+		collection.set(document.uri, [{
+			code: '10+10 = 45',
+			message: 'cannot assign twice to immutable variable `x`',
+			range: new vscode.Range(new vscode.Position(0, 0), new vscode.Position(10, 10)),
+			severity: vscode.DiagnosticSeverity.Warning,
+			source: '',
+			relatedInformation: [
+				new vscode.DiagnosticRelatedInformation(new vscode.Location(document.uri, new vscode.Range(new vscode.Position(1, 8), new vscode.Position(1, 9))), 'first assignment to `x`')
+            ],
+            tags: [vscode.DiagnosticTag.Deprecated, vscode.DiagnosticTag.Unnecessary],
+
+		}]);
+	} else {
+		collection.clear();
+	}
+}
+
 export function deactivate() {}
