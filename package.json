@@ -16,6 +16,10 @@
       {
         "command": "perplexity-debugging.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "perplexity-debugging.findProblems",
+        "title": "Find problems"
       }
     ]
   },

@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as path from "path";
 
 export function activate(context: vscode.ExtensionContext) {
   console.log(
@@ -10,7 +9,7 @@ export function activate(context: vscode.ExtensionContext) {
     "perplexity-debugging.helloWorld",
     () => {
       vscode.window.showInformationMessage(
-        "Hello World from perplexity-debugging!"
+        "Hello World  skjhkjhkjfrom perplexity-debugging!"
       );
     }
   );
@@ -18,16 +17,73 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposable);
 
   const collection = vscode.languages.createDiagnosticCollection("test");
-  if (vscode.window.activeTextEditor) {
-    updateDiagnostics(vscode.window.activeTextEditor.document, collection);
-  }
-  context.subscriptions.push(
-    vscode.window.onDidChangeActiveTextEditor((editor) => {
-      if (editor) {
-        updateDiagnostics(editor.document, collection);
+
+  let updateDiagnosticsCommand = vscode.commands.registerCommand(
+    "perplexity-debugging.findProblems",
+    () => {
+      if (vscode.window.activeTextEditor) {
+        findProblems(vscode.window.activeTextEditor.document, collection);
       }
-    })
+    }
   );
+
+  context.subscriptions.push(updateDiagnosticsCommand);
+  console.log("updateDiagnosticsCommand regostered");
+}
+
+async function findProblems(
+  document: vscode.TextDocument,
+  collection: vscode.DiagnosticCollection
+): Promise<void> {
+  if (document) {
+    const apiUrl = "http://delos.eaalab.hpi.uni-potsdam.de:8010";
+    const documentText = document.getText();
+
+    try {
+      const response = await fetch(apiUrl + "/highlight-code/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt: documentText }),
+      });
+      console.log("response", response);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch analysis from the API");
+      }
+
+      console.log("text", documentText);
+      const responseData = await response.json();
+      console.log("responseData", responseData);
+
+      const warnings = [];
+
+      for (let i = 0; i < responseData.length; i++) {
+        const line = responseData[i].line_number;
+        const warning = {
+          code: responseData[i].problematic_line_of_code,
+          message: responseData[i].description,
+          range: new vscode.Range(
+            new vscode.Position(line, 0),
+            new vscode.Position(line, 100)
+          ),
+          severity: vscode.DiagnosticSeverity.Information,
+          source: "Your debugging AI assistant.",
+          relatedInformation: [],
+          tags: [],
+        };
+        warnings.push(warning);
+      }
+
+      collection.set(document.uri, warnings);
+    } catch (error) {
+      console.error("Error fetching data from API:", error);
+      // Handle error here
+    }
+  } else {
+    collection.clear();
+  }
 }
 
 async function updateDiagnostics(
@@ -35,7 +91,7 @@ async function updateDiagnostics(
   collection: vscode.DiagnosticCollection
 ): Promise<void> {
   if (document) {
-    const apiUrl = "http://delos.eaalab.hpi.uni-potsdam.de:8010"; // Replace this with your actual API URL
+    const apiUrl = "http://delos.eaalab.hpi.uni-potsdam.de:8010";
     const documentText = document.getText();
 
     try {
@@ -63,8 +119,8 @@ async function updateDiagnostics(
       for (let i = 0; i < warningMessage.length; i++) {
         const token = warningMessage[i][1];
         const perplexity = Number(warningMessage[i][0]);
-        const thresholdInfo = 0.3;
-        const thresholdWarning = 0.7;
+        const thresholdInfo = 0.9;
+        const thresholdWarning = 1;
         const thresholdError = 0.9;
         let nextposition = position + token.length;
         const nextline = line + token.split("\n").length - 1;
