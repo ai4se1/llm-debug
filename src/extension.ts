@@ -9,7 +9,7 @@ export function activate(context: vscode.ExtensionContext) {
     "perplexity-debugging.helloWorld",
     () => {
       vscode.window.showInformationMessage(
-        "Hello World  skjhkjhkjfrom perplexity-debugging!"
+        "Hello World from perplexity-debugging!"
       );
     }
   );
@@ -28,7 +28,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(updateDiagnosticsCommand);
-  console.log("updateDiagnosticsCommand regostered");
+  console.log("updateDiagnosticsCommand registered");
 }
 
 async function findProblems(
@@ -38,14 +38,16 @@ async function findProblems(
   if (document) {
     const apiUrl = "http://delos.eaalab.hpi.uni-potsdam.de:8010";
     const documentText = document.getText();
-
+    const languageId = document.languageId;
+    console.log("languageId", languageId);
+    vscode.window.showInformationMessage("Finding problems...");
     try {
       const response = await fetch(apiUrl + "/highlight-code/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt: documentText }),
+        body: JSON.stringify({ code: documentText, language: languageId }),
       });
       console.log("response", response);
 
@@ -60,7 +62,8 @@ async function findProblems(
       const warnings = [];
 
       for (let i = 0; i < responseData.length; i++) {
-        const line = responseData[i].line_number;
+        // -1 because the line numbers are 1-indexed
+        const line = responseData[i].line_number - 1;
         const warning = {
           code: responseData[i].problematic_line_of_code,
           message: responseData[i].description,
@@ -74,6 +77,9 @@ async function findProblems(
           tags: [],
         };
         warnings.push(warning);
+      }
+      if (warnings.length === 0) {
+        vscode.window.showInformationMessage("No problems found!");
       }
 
       collection.set(document.uri, warnings);
