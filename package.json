@@ -20,6 +20,10 @@
       {
         "command": "perplexity-debugging.findProblems",
         "title": "Find problems"
+      },
+      {
+        "command": "perplexity-debugging.debugsession",
+        "title": "Debug session"
       }
     ]
   },

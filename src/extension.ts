@@ -29,6 +29,12 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(updateDiagnosticsCommand);
   console.log("updateDiagnosticsCommand registered");
+  let activeDebugSession = vscode.commands.registerCommand(
+    "perplexity-debugging.debugsession",
+    () => {
+      printDebugActiveStackItem();
+    }
+  );
 }
 
 async function findProblems(
@@ -89,6 +95,18 @@ async function findProblems(
     }
   } else {
     collection.clear();
+  }
+}
+
+async function printDebugActiveStackItem() {
+  const activeDebugSession = vscode.debug.activeDebugSession;
+  if (activeDebugSession) {
+    const activeStackItem = vscode.debug.activeStackItem;
+    vscode.window.showInformationMessage(
+      "Active stack item: " + activeStackItem
+    );
+  } else {
+    vscode.window.showInformationMessage("No denug session found!");
   }
 }
 
