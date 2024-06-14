@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { DebugSession } from "vscode";
 
 export function activate(context: vscode.ExtensionContext) {
   console.log(
@@ -35,6 +36,17 @@ export function activate(context: vscode.ExtensionContext) {
       printDebugActiveStackItem();
     }
   );
+
+  vscode.debug.registerDebugAdapterTrackerFactory("*", {
+    createDebugAdapterTracker(session: DebugSession) {
+      return {
+        onWillReceiveMessage: (m) =>
+          console.log(`> ${JSON.stringify(m, undefined, 2)}`),
+        onDidSendMessage: (m) =>
+          console.log(`< ${JSON.stringify(m, undefined, 2)}`),
+      };
+    },
+  });
 }
 
 async function findProblems(
@@ -95,18 +107,6 @@ async function findProblems(
     }
   } else {
     collection.clear();
-  }
-}
-
-async function printDebugActiveStackItem() {
-  const activeDebugSession = vscode.debug.activeDebugSession;
-  if (activeDebugSession) {
-    const activeStackItem = vscode.debug.activeStackItem;
-    vscode.window.showInformationMessage(
-      "Active stack item: " + activeStackItem
-    );
-  } else {
-    vscode.window.showInformationMessage("No denug session found!");
   }
 }
 
