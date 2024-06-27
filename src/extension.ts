@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
 import { DebugSession } from "vscode";
 
+const apiUrl = "http://delos.eaalab.hpi.uni-potsdam.de:8010";
+
 export function activate(context: vscode.ExtensionContext) {
   console.log(
     'Congratulations, your extension "perplexity-debugging" is now active!'
@@ -32,29 +34,26 @@ export function activate(context: vscode.ExtensionContext) {
   console.log("updateDiagnosticsCommand registered");
   let activeDebugSession = vscode.commands.registerCommand(
     "perplexity-debugging.debugsession",
-    () => {
-      printDebugActiveStackItem();
+    async () => {
+      const thread_result = await vscode.debug.activeDebugSession?.customRequest("threads", {});
+      const stack_traces = await vscode.debug.activeDebugSession?.customRequest("stackTrace", { threadId: thread_result.threads[0].id, startFrame: 0, levels: 1 });
+      const current_stack_trace = stack_traces.stackFrames[0];
+      const scopes = await vscode.debug.activeDebugSession?.customRequest("scopes", { frameId: current_stack_trace.id });
+      const  variables = await vscode.debug.activeDebugSession?.customRequest("variables", { variablesReference: scopes.scopes[0].variablesReference });
+      variables["variables"].forEach((variable) => {
+        console.log(`${variable.name} ${variable.value}`);
+      });
     }
   );
 
-  vscode.debug.registerDebugAdapterTrackerFactory("*", {
-    createDebugAdapterTracker(session: DebugSession) {
-      return {
-        onWillReceiveMessage: (m) =>
-          console.log(`> ${JSON.stringify(m, undefined, 2)}`),
-        onDidSendMessage: (m) =>
-          console.log(`< ${JSON.stringify(m, undefined, 2)}`),
-      };
-    },
-  });
 }
 
 async function findProblems(
   document: vscode.TextDocument,
-  collection: vscode.DiagnosticCollection
+  collection: vscode.DiagnosticCollection,
+  variables: any
 ): Promise<void> {
   if (document) {
-    const apiUrl = "http://delos.eaalab.hpi.uni-potsdam.de:8010";
     const documentText = document.getText();
     const languageId = document.languageId;
     console.log("languageId", languageId);
