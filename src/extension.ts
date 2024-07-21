@@ -3,11 +3,11 @@ import * as vscode from "vscode";
 const apiUrl = "http://delos.eaalab.hpi.uni-potsdam.de:8010";
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log(
-    'Congratulations, your extension "perplexity-debugging" is now active!'
-  );
+  console.log("Your Debugging Extension is now active!");
 
-  const collection = vscode.languages.createDiagnosticCollection("test");
+  const collection = vscode.languages.createDiagnosticCollection(
+    "debuggingDiagnostics"
+  );
 
   let updateDiagnosticsCommand = vscode.commands.registerCommand(
     "perplexity-debugging.findProblems",
