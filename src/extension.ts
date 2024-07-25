@@ -102,31 +102,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  let debugSessionCommand =  vscode.commands.registerCommand(
-    "perplexity-debugging.debugsession",
-    async () => {
-      const thread_result =
-        await vscode.debug.activeDebugSession?.customRequest("threads", {});
-      const stack_traces = await vscode.debug.activeDebugSession?.customRequest(
-        "stackTrace",
-        { threadId: thread_result.threads[0].id, startFrame: 0, levels: 1 }
-      );
-      const current_stack_trace = stack_traces.stackFrames[0];
-      const scopes = await vscode.debug.activeDebugSession?.customRequest(
-        "scopes",
-        { frameId: current_stack_trace.id }
-      );
-      const variables = await vscode.debug.activeDebugSession?.customRequest(
-        "variables",
-        { variablesReference: scopes.scopes[0].variablesReference }
-      );
-      variables["variables"].forEach((variable: any) => {
-        console.log(`${variable.name} ${variable.value}`);
-      });
-    }
-  );
   context.subscriptions.push(updateDiagnosticsCommand);
-  context.subscriptions.push(debugSessionCommand);
   context.subscriptions.push(collection);
 }
 
