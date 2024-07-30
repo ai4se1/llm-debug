@@ -1,15 +1,32 @@
 import { get } from "http";
 import * as vscode from "vscode";
 
-const apiUrl = "http://delos.eaalab.hpi.uni-potsdam.de:8010";
+let apiUrl = "";
 
-const mapFunc = ({name, value, type, recursiveValue}) => {return {name, value, type, recursiveValue}};
+function apiPost<T>(url: string, data: any): Promise<T> {
+  fetch(apiUrl + "/highlight-code/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  }).then((response) => { 
+    if (!response.ok) {
+      throw new Error("Failed to fetch analysis from the API");
+    }
+    return response.json() as Promise<T>;
+  });
+  return new Promise((resolve, reject) => {
+  });
+}
 
-async function recursiveResolveVariables(variables, depth) { 
+const mapFunc = ({ name, value, type, recursiveValue }: { name: any, value: any, type: any, recursiveValue: any }) => { return { name, value, type, recursiveValue }; };
+
+async function recursiveResolveVariables(variables: any[], depth: number) { 
   if (depth > 20) {
     return;
   }
-  await Promise.all(variables.map(async (element) => {
+  await Promise.all(variables.map(async (element: { variablesReference: number; name: string; recursiveValue: any; }) => {
     if (element.variablesReference !== 0) {
       const result = await vscode.debug.activeDebugSession?.customRequest(
         "variables",
@@ -18,7 +35,7 @@ async function recursiveResolveVariables(variables, depth) {
       if (element.name !== "special variables") {
         await recursiveResolveVariables(result["variables"], depth + 1);
       }
-      const recursiveValue = result["variables"].filter((variable) => variable.name !== "special variables").map(mapFunc);
+      const recursiveValue = result["variables"].filter((variable: { name: string; }) => variable.name !== "special variables").map(mapFunc);
       if (recursiveValue.length > 0) {
         element.recursiveValue = recursiveValue;
       }
@@ -36,7 +53,7 @@ async function getDebugState() {
   const stackFrameNames = stack_traces.stackFrames.map((stack_trace: any) => stack_trace.name);
   const current_stack_trace = stack_traces.stackFrames[0];
   let lineContent = "Unknown line content";
-  if (vscode.window.activeTextEditor.document.fileName === current_stack_trace.source.path) {
+  if (vscode.window.activeTextEditor !== undefined && vscode.window.activeTextEditor.document.fileName === current_stack_trace.source.path) {
     lineContent = vscode.window.activeTextEditor.document.lineAt(current_stack_trace.line - 1).text;
   }
 
@@ -50,7 +67,7 @@ async function getDebugState() {
     { variablesReference: scopes.scopes[0].variablesReference }
   );
   await recursiveResolveVariables(locals["variables"], 0);
-  const strippedLocals = locals["variables"].filter((variable) => variable.name !== "special variables").map(mapFunc);
+  const strippedLocals = locals["variables"].filter((variable: { name: string; }) => variable.name !== "special variables").map(mapFunc);
   const globals = await vscode.debug.activeDebugSession?.customRequest(
     "variables",
     { variablesReference: scopes.scopes[1].variablesReference }
@@ -66,6 +83,8 @@ async function getDebugState() {
 }
 export function activate(context: vscode.ExtensionContext) {
   console.log("Your Debugging Extension is now active!");
+  const configuration = vscode.workspace.getConfiguration("perplexity-debugging");
+  apiUrl = `${configuration.get("apiUrl")}:${configuration.get("apiPort")}`;
 
   const collection = vscode.languages.createDiagnosticCollection(
     "debuggingDiagnostics"
@@ -96,7 +115,7 @@ export function activate(context: vscode.ExtensionContext) {
           title: 'Finding problems',
         },
           async (progress) => {
-            await findProblems(vscode.window.activeTextEditor.document, collection, userContext, debugInformation, progress);
+            await findProblems(vscode.window.activeTextEditor?.document, collection, userContext, debugInformation, progress);
           });
       }
     }
@@ -107,7 +126,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 async function findProblems(
-  document: vscode.TextDocument,
+  document: vscode.TextDocument | undefined,
   collection: vscode.DiagnosticCollection,
   userContext: string,
   debugInformation: any,
@@ -119,25 +138,10 @@ async function findProblems(
     console.log("languageId", languageId);
     try {
       progress.report({ message: "Fetching analysis from the API..." });
-      const response = await fetch(apiUrl + "/highlight-code/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ code: documentText, language: languageId, context: userContext, debugState: `${JSON.stringify(debugInformation, null, 2)}` }),
-      });
-      console.log("response", response);
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch analysis from the API");
-      }
-
-      console.log("text", documentText);
-      const responseData = await response.json();
-      console.log("responseData", responseData);
 
       const warnings = [];
       progress.report({ message: "Generating code items" });
+      const responseData = await apiPost<{ line_number: number, problematic_line_of_code: string, description: string }[]>(apiUrl + "/highlight-code/", { code: documentText, language: languageId, context: userContext, debugState: `${JSON.stringify(debugInformation, null, 2)}` });
 
       for (let i = 0; i < responseData.length; i++) {
         // -1 because the line numbers are 1-indexed
