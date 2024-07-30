@@ -1,6 +1,7 @@
 {
   "name": "perplexity-debugging",
   "displayName": "perplexity-debugging",
+  "publisher": "ai4se1",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -17,7 +18,22 @@
         "command": "perplexity-debugging.findProblems",
         "title": "Find problems"
       }
-    ]
+    ],
+    "configuration" : {
+      "title" : "Perplexity Debugging",
+      "properties": {
+        "perplexity-debugging.apiURL" : {
+          "type": "string",
+          "default": "http://delos.eaalab.hpi.uni-potsdam.de",
+          "markdownDescription": "The URL of the API to use for problem detection."
+        },
+        "perplexity-debugging.Port" : {
+          "type": "number",
+          "default": 8010,
+          "markdownDescription": "The port to use for the API."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "yarn run package",
