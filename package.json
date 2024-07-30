@@ -3,6 +3,10 @@
   "displayName": "perplexity-debugging",
   "publisher": "ai4se1",
   "description": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ai4se1/perplexity-debugging"
+  },
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.89.0"
