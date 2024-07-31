@@ -10,7 +10,6 @@ function apiPost<T>(url: string, data: any): Promise<T> {
     },
     body: JSON.stringify(data),
   }).then((response) => {
-    console.log("response", response);
     if (!response.ok) {
       return Promise.reject("Hello");
     }
@@ -29,7 +28,6 @@ async function recursiveResolveVariables(variables: any[], depth: number) {
       const result = await vscode.debug.activeDebugSession?.customRequest(
         "variables",
         { variablesReference: element.variablesReference });
-      console.log("result", result, "element", element);
       if (element.name !== "special variables") {
         await recursiveResolveVariables(result["variables"], depth + 1);
       }
@@ -80,8 +78,7 @@ async function getDebugState() {
   };
 }
 export function activate(context: vscode.ExtensionContext) {
-  console.log("Your Debugging Extension is now active!");
-  const configuration = vscode.workspace.getConfiguration("perplexity-debugging");
+  const configuration = vscode.workspace.getConfiguration("llm-debug");
   apiUrl = `${configuration.get("apiURL")}:${configuration.get("Port")}`;
 
   const collection = vscode.languages.createDiagnosticCollection(
@@ -89,7 +86,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   let updateDiagnosticsCommand = vscode.commands.registerCommand(
-    "perplexity-debugging.findProblems",
+    "llm-debug.findProblems",
     async () => {
       if (vscode.window.activeTextEditor) {
         const userContext = await vscode.window.showInputBox({title: "Enter the context of the code snippet", placeHolder: "This is a fizz-buzz implementation", prompt: "Please enter the context of the code snippet"});
@@ -104,7 +101,6 @@ export function activate(context: vscode.ExtensionContext) {
           const choice = await vscode.window.showQuickPick([positiveChoice, negativeChoice], { title: "Choose the context of the code snippet" });
           if (choice === positiveChoice) {
             debugInformation = await getDebugState();
-            console.log(`Debug information: ${JSON.stringify(debugInformation, null, 2)}`);
           }
         }
         vscode.window.withProgress({
@@ -133,7 +129,6 @@ async function findProblems(
   if (document) {
     const documentText = document.getText();
     const languageId = document.languageId;
-    console.log("languageId", languageId);
     try {
       progress.report({ message: "Fetching analysis from the API..." });
 
@@ -176,5 +171,4 @@ async function findProblems(
 }
 
 export function deactivate() {
-  console.log('Your extension "perplexity-debugging" is now deactivated!');
 }

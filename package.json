@@ -1,11 +1,11 @@
 {
-  "name": "perplexity-debugging",
-  "displayName": "perplexity-debugging",
+  "name": "llm-debug",
+  "displayName": "LLM Debug Assistant",
   "publisher": "ai4se1",
   "description": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ai4se1/perplexity-debugging"
+    "url": "https://github.com/ai4se1/llm-debug"
   },
   "version": "0.0.1",
   "engines": {
@@ -19,19 +19,19 @@
   "contributes": {
     "commands": [
       {
-        "command": "perplexity-debugging.findProblems",
+        "command": "llm-debug.findProblems",
         "title": "Find problems"
       }
     ],
     "configuration" : {
-      "title" : "Perplexity Debugging",
+      "title" : "LLM Debug Assistant",
       "properties": {
-        "perplexity-debugging.apiURL" : {
+        "llm-debug.apiURL" : {
           "type": "string",
           "default": "http://delos.eaalab.hpi.uni-potsdam.de",
           "markdownDescription": "The URL of the API to use for problem detection."
         },
-        "perplexity-debugging.Port" : {
+        "llm-debug.Port" : {
           "type": "number",
           "default": 8010,
           "markdownDescription": "The port to use for the API."
