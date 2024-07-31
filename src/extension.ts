@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 
 let apiUrl = "";
 
-function apiPost<T>(url: string, data: any): Promise<T> {
+function apiPost<T>(data: any): Promise<T> {
   return fetch(apiUrl + "/highlight-code/", {
     method: "POST",
     headers: {
@@ -11,13 +11,13 @@ function apiPost<T>(url: string, data: any): Promise<T> {
     body: JSON.stringify(data),
   }).then((response) => {
     if (!response.ok) {
-      return Promise.reject("Hello");
+      return Promise.reject("Request not successful");
     }
     return response.json() as Promise<T>;
   });
 }
 
-const mapFunc = ({ name, value, type, recursiveValue }: { name: any, value: any, type: any, recursiveValue: any }) => { return { name, value, type, recursiveValue }; };
+const mapFunc = ({ name, value, type, recursiveValue }: { name: string, value: string, type: string, recursiveValue: any }) => { return { name, value, type, recursiveValue }; };
 
 async function recursiveResolveVariables(variables: any[], depth: number) { 
   if (depth > 20) {
@@ -134,7 +134,7 @@ async function findProblems(
 
       const warnings = [];
       progress.report({ message: "Generating code items" });
-      const responseData = await apiPost<{ line_number: number, problematic_line_of_code: string, description: string }[]>(apiUrl + "/highlight-code/", { code: documentText, language: languageId, context: userContext, debugState: `${JSON.stringify(debugInformation, null, 2)}` });
+      const responseData = await apiPost<{ line_number: number, problematic_line_of_code: string, description: string, action: string, suggestion: string }[]>({ code: documentText, language: languageId, context: userContext, debugState: `${JSON.stringify(debugInformation, null, 2)}` });
 
       for (let i = 0; i < responseData.length; i++) {
         // -1 because the line numbers are 1-indexed
@@ -143,13 +143,13 @@ async function findProblems(
 
         const warning = {
           code: responseData[i].problematic_line_of_code,
-          message: responseData[i].description,
+          message: `Description: ${responseData[i].description}\nSuggestion: ${responseData[i].suggestion}\nAction: ${responseData[i].action}\n`,
           range: new vscode.Range(
             new vscode.Position(lineNumber, line.firstNonWhitespaceCharacterIndex),
             line.range.end
           ),
           severity: vscode.DiagnosticSeverity.Information,
-          source: "Your debugging AI assistant.",
+          source: "LLM Debug Assistant",
           relatedInformation: [],
           tags: [],
         };
