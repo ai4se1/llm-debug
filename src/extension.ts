@@ -1,22 +1,20 @@
-import { get } from "http";
 import * as vscode from "vscode";
 
 let apiUrl = "";
 
 function apiPost<T>(url: string, data: any): Promise<T> {
-  fetch(apiUrl + "/highlight-code/", {
+  return fetch(apiUrl + "/highlight-code/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
-  }).then((response) => { 
+  }).then((response) => {
+    console.log("response", response);
     if (!response.ok) {
-      throw new Error("Failed to fetch analysis from the API");
+      return Promise.reject("Hello");
     }
     return response.json() as Promise<T>;
-  });
-  return new Promise((resolve, reject) => {
   });
 }
 
@@ -84,7 +82,7 @@ async function getDebugState() {
 export function activate(context: vscode.ExtensionContext) {
   console.log("Your Debugging Extension is now active!");
   const configuration = vscode.workspace.getConfiguration("perplexity-debugging");
-  apiUrl = `${configuration.get("apiUrl")}:${configuration.get("apiPort")}`;
+  apiUrl = `${configuration.get("apiURL")}:${configuration.get("Port")}`;
 
   const collection = vscode.languages.createDiagnosticCollection(
     "debuggingDiagnostics"
