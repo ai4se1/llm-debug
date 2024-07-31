@@ -6,6 +6,8 @@ This is a VS-Code extension, we created in the lecture AI in software engineerin
 
 You can download the bundled `.vsix` file and install it in VS Code. We tested the extension with version `1.90.0-1` of VS Code.
 
+To Download the latest extension, look in the artifacts of the latest successful run of the build pipeline [here](https://github.com/ai4se1/llm-debug/actions/workflows/build.yml). The artifacts are on the bottom of the page, after clicking on a run.
+
 To install an extension from an vsix file, follow the steps below:
 
 1. Navigate to the extensions settings on the left navigation bar.
